@@ -1,89 +1,90 @@
 # redline
 
-**Um agente que explica por que o CI ficou vermelho.**
+**An agent that explains why CI went red.**
 
-Quando um pipeline falha, `redline` pega os logs, o diff e o repositório, reproduz a
-falha quando consegue, e responde **por que quebrou** — com evidência e um próximo
-passo. Não um resumo do log: uma explicação.
+When a pipeline fails, `redline` takes the logs, the diff and the repository,
+reproduces the failure where it can, and answers **why it broke** — with evidence and
+a next step. Not a summary of the log: an explanation.
 
 ---
 
-## Por que isto existe
+## Why this exists
 
-Uma execução vermelha é o **único** momento em que a explicação existe. E ela é
-sistematicamente destruída, sempre pelo mesmo motivo: o filtro é escrito para o caso
-que se espera, e o caso que se espera é o verde.
+A red run is the **only** moment the explanation exists. It is destroyed routinely, and
+always by the same mechanism: the filter is written for the case you expect, and the
+case you expect is green.
 
-Três episódios medidos em dezessete horas, no ecossistema que originou este projeto:
+Three episodes measured within seventeen hours, in the ecosystem this project came from:
 
-| o que foi rodado | o que sobrou |
+| what was run | what survived |
 |---|---|
-| `pnpm test \| grep` | `11 failed`. Nenhum nome de teste. As duas execuções seguintes passaram — a explicação deixou de existir. |
-| `pnpm gates >/dev/null 2>&1 && echo OK` | A saída inteira descartada. O `echo` como único oráculo. |
-| vinte commits contra um gate local verde | O CI esteve vermelho o tempo todo. Quem percebeu foi alguém de fora. |
+| `pnpm test \| grep` | `11 failed`. No test names. The next two runs passed — the explanation ceased to exist. |
+| `pnpm gates >/dev/null 2>&1 && echo OK` | The entire output discarded. The `echo` as the only oracle. |
+| twenty commits against a green local gate | CI was red the whole time. An outside observer surfaced it. |
 
-Nenhum dos três foi descuido. **Todos foram o comando escrito antes de o resultado
-importar.** É esse buraco que `redline` ocupa.
+None of the three was carelessness. **All three were the command written before the
+result mattered.** That is the gap `redline` fills.
 
 ---
 
-## Regra inviolável deste repositório
+## Inviolable rule of this repository
 
-> Este projeto consome `@theokit/sdk` **exclusivamente do registry npm**.
+> This project consumes `@theokit/sdk` **from the npm registry only**.
 >
-> Sem `file:`, sem `pnpm link`, sem `workspace:`, sem alcançar um checkout local.
-> **Se algo só funciona com o código-fonte à mão, isso é um issue — não um contorno.**
+> No `file:`, no `pnpm link`, no `workspace:`, no reaching into a local checkout.
+> **If something only works with the source at hand, that is an issue — not a workaround.**
 
-O motivo não é purismo. Este repositório existe para medir a experiência de quem
-instala o SDK sem conhecê-lo por dentro. No instante em que ele consome código local,
-deixa de medir o que é publicado e passa a medir o que existe numa máquina — que é
-exatamente a classe de defeito que ele foi criado para encontrar.
+The reason is not purism. This repository exists to measure what a developer
+experiences installing the SDK without knowing it from the inside. The moment it
+consumes local source it stops measuring what is published and starts measuring what
+exists on one machine — which is the exact defect class it was built to find.
 
-A mesma disciplina vale para o conhecimento: **quem constrói aqui não deve consultar o
-fonte do SDK.** Documentação, tipos publicados e mensagens de erro são a superfície
-inteira. Contornar um problema porque se conhece o interno é perder a medição.
+The same discipline applies to knowledge: **whoever builds here should not read the
+SDK's source.** Documentation, published types and error messages are the whole
+surface. Routing around a problem because you know the internals is losing the
+measurement.
 
 ---
 
-## O que ele exercita
+## What it exercises
 
-`redline` foi escolhido por atravessar a coluna do SDK, não uma fatia dela.
+`redline` was chosen because it crosses the SDK's spine rather than one slice of it.
 
-| capacidade | por que este produto precisa dela |
+| capability | why this product needs it |
 |---|---|
-| `buildRepoMap` | entender um repositório que ele não conhece |
-| `compactTranscript` | **um log de CI não cabe na janela** — e a informação útil são três linhas |
-| `sandbox` | reproduzir sem confiar no que o log afirma |
-| `subagents` | um por job que falhou, em paralelo |
-| `persistence` | *"já vimos esta falha?"* — reincidência é o dado mais valioso |
-| `isTransientError` | espelho de rede caindo e teste quebrado pedem respostas **opostas** |
-| `subscription` | transmitir a análise enquanto ela acontece |
-| `server/auth` | webhook autenticado — é um serviço, não um script |
-| `Eval` + `Scorers` | a explicação estava certa? Sem isso, é chute com confiança |
+| `buildRepoMap` | understand a repository it does not know |
+| `compactTranscript` | **a CI log does not fit the window** — and the useful information is three lines |
+| `sandbox` | reproduce rather than trust what the log claims |
+| `subagents` | one per failing job, in parallel |
+| `persistence` | *"have we seen this failure before?"* — recurrence is the most valuable signal |
+| `isTransientError` | a network mirror going down and a broken test demand **opposite** answers |
+| `subscription` | stream the analysis while it happens |
+| `server/auth` | an authenticated webhook — this is a service, not a script |
+| `Eval` + `Scorers` | was the explanation right? Without this it is a guess delivered with confidence |
 
-**Dois decidem se o produto existe.** `compactTranscript`, porque se a compactação
-descartar as três linhas que importam não há explicação a dar. E `isTransientError`,
-porque chamar de "falha de CI" tanto um `apt` indisponível quanto um teste quebrado é
-errar precisamente naquilo que o produto vende — hoje, um passo de rede pendurou um PR
-por 1h51 enquanto um teste realmente quebrado ficou vermelho por quatro horas.
-
----
-
-## Estado
-
-**Dia 0.** Nada implementado. Decisões em aberto:
-
-- [ ] Primeiro repositório observado — candidato: `usetheoai-lab/TheoCode` (público, CI real)
-- [ ] Comenta sozinho no PR ou espera aprovação humana
-- [ ] Superfície de entrada: webhook, GitHub App ou polling
+**Two of them decide whether the product exists.** `compactTranscript`, because if
+compaction drops the three lines that matter there is no explanation to give. And
+`isTransientError`, because calling both an unavailable `apt` mirror and a broken test
+"a CI failure" is getting precisely the thing the product sells wrong — one network
+step hung a PR for 1h51 while a genuinely broken test stayed red for four hours.
 
 ---
 
-## Como reportamos
+## Status
 
-Toda fricção vira issue, **inclusive a documental**. *"O README não disse"* é um issue
-legítimo e é o mais sub-reportado de todos, porque quem tropeça nele resolve sozinho e
-segue adiante. Para adoção, é o que mais custa.
+**Day 0.** Nothing implemented. Open decisions:
 
-Issues sobre o SDK vão para o repositório do SDK, com: o que se tentou, o que se
-esperava, o que aconteceu, e a versão exata instalada.
+- [ ] First repository watched — candidate: `usetheoai-lab/TheoCode` (public, real CI)
+- [ ] Comments on the PR autonomously, or waits for human approval
+- [ ] Entry surface: webhook, GitHub App, or polling
+
+---
+
+## How we report
+
+Every friction becomes an issue, **documentation friction included**. *"The README did
+not say"* is a legitimate issue and the most under-reported one, because whoever trips
+on it solves it alone and moves on. For adoption, it is the most expensive.
+
+Issues about the SDK go to the SDK's repository, carrying: what was attempted, what was
+expected, what happened, and the exact installed version.
