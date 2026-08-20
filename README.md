@@ -1,6 +1,6 @@
 # redline
 
-**An agent that explains why CI went red.**
+**An agent that explains why CI went red.** Built with [`@theokit/sdk`](https://www.npmjs.com/package/@theokit/sdk).
 
 When a pipeline fails, `redline` takes the logs, the diff and the repository,
 reproduces the failure where it can, and answers **why it broke** — with evidence and
@@ -14,7 +14,7 @@ A red run is the **only** moment the explanation exists. It is destroyed routine
 always by the same mechanism: the filter is written for the case you expect, and the
 case you expect is green.
 
-Three episodes measured within seventeen hours, in the ecosystem this project came from:
+Three episodes measured within seventeen hours on one team's repositories:
 
 | what was run | what survived |
 |---|---|
@@ -27,28 +27,11 @@ result mattered.** That is the gap `redline` fills.
 
 ---
 
-## Inviolable rule of this repository
+## This project is built with `@theokit/sdk`
 
-> This project consumes `@theokit/sdk` **from the npm registry only**.
->
-> No `file:`, no `pnpm link`, no `workspace:`, no reaching into a local checkout.
-> **If something only works with the source at hand, that is an issue — not a workaround.**
-
-The reason is not purism. This repository exists to measure what a developer
-experiences installing the SDK without knowing it from the inside. The moment it
-consumes local source it stops measuring what is published and starts measuring what
-exists on one machine — which is the exact defect class it was built to find.
-
-The same discipline applies to knowledge: **whoever builds here should not read the
-SDK's source.** Documentation, published types and error messages are the whole
-surface. Routing around a problem because you know the internals is losing the
-measurement.
-
----
-
-## What it exercises
-
-`redline` was chosen because it crosses the SDK's spine rather than one slice of it.
+`redline` is an agent, and the harness underneath it is `@theokit/sdk`. Every capability
+below comes from the SDK rather than from bespoke code here — that is a deliberate
+constraint, not an accident of convenience.
 
 | capability | why this product needs it |
 |---|---|
@@ -68,13 +51,36 @@ compaction drops the three lines that matter there is no explanation to give. An
 "a CI failure" is getting precisely the thing the product sells wrong — one network
 step hung a PR for 1h51 while a genuinely broken test stayed red for four hours.
 
+If a capability is missing, awkward, or undocumented, **that is a finding**. Building
+this product is how we learn what the SDK is actually like to use.
+
+---
+
+## Inviolable rule of this repository
+
+> This project consumes `@theokit/sdk` **from the npm registry only**.
+>
+> No `file:`, no `pnpm link`, no `workspace:`, no reaching into a local checkout.
+> **If something only works with the source at hand, that is an issue — not a workaround.**
+
+The reason is not purism. This repository exists to measure what a developer experiences
+installing the SDK without knowing it from the inside. The moment it consumes local
+source it stops measuring what is published and starts measuring what exists on one
+machine.
+
+The same discipline applies to knowledge: **whoever builds here should not read the
+SDK's source.** Documentation, published types and error messages are the whole surface.
+Routing around a problem because you know the internals is losing the measurement.
+
 ---
 
 ## Status
 
 **Day 0.** Nothing implemented. Open decisions:
 
-- [ ] First repository watched — candidate: `usetheoai-lab/TheoCode` (public, real CI)
+- [ ] **First repository watched.** It should be a project this codebase has no inside
+      knowledge of — otherwise the agent gets credit for what the author already knew,
+      and the repository map, the log shapes and the failure modes stop being discoveries.
 - [ ] Comments on the PR autonomously, or waits for human approval
 - [ ] Entry surface: webhook, GitHub App, or polling
 
